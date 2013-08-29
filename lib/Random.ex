@@ -1,15 +1,25 @@
 defmodule Random do
   use Bitwise
+  
+  @moduledoc """
+  Random algorithms adapted from Python 3
+  """
 
   @nv_magicconst 4 * :math.exp(-0.5) / :math.sqrt(2.0)
   @twopi 2 * :math.pi
+  @log4 :math.log(4)
+  @sg_magicconst 1 + :math.log(4.5)
   @bpf 53
+  @recip_bpf :math.pow(2, -@bpf)
   @maxwidth 1 <<< @bpf
 
   defexception ValueError, message: "ValueError", can_rety: false do
     def full_message(self), do: "ValueError: #{self.message}" 
   end
 
+  @doc """
+  Choose a random item from range(start, stop[, step]).
+  """
   def randrange(stop) do
     randrange(0, stop, 1)
   end
@@ -78,12 +88,49 @@ defmodule Random do
     trunc(:random.uniform * n)
   end
 
+  @doc """
+  Return random integer in range [a, b], including both end points.
+  """
+  def randint(a, b), do: randrange(a, b + 1)
+  
+  @doc """
+  Choose a random element from a non-empty sequence.
+  """
   def choice(seq) do
     Enum.at(seq, trunc(:random.uniform * Enum.count(seq)))
   end
+  
+  @doc """
+  Chooses k unique random elements from a population sequence.
+  """
+  def sample(pop, k)
+    when k >= 0 and is_list(pop) do
+    pop = list_to_tuple(pop)
+    n = size(pop)
+    sel = HashSet.new
+    Enum.map sample_helper(n, k, sel, 0), &(elem(pop, &1))
+  end
+    
+  defp sample_helper(n, k, sel, sel_size) do
+    if sel_size < k do
+      j = trunc(:random.uniform * n)
+      if Set.member?(sel, j) do
+        sample_helper(n, k, sel, sel_size)
+      else
+        sel = Set.put(sel, j)
+        sel_size = sel_size + 1
+        sample_helper(n, k, sel, sel_size)
+      end
+    else
+      Set.to_list(sel)
+    end
+  end
 
-  def randint(a, b), do: randrange(a, b + 1)
+  @doc """
+  Shuffle sequence `x`
+  """
   def shuffle(x), do: Enum.shuffle(x)
+  
   def uniform(a, b), do: a + (b - a) * :random.uniform
   def random, do: :random.uniform
 
@@ -137,10 +184,5 @@ defmodule Random do
   end
 
   def mod(x, y), do: rem(rem(x, y) + y, y)
-
-
-    
-
-    
 
 end
