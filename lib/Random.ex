@@ -12,10 +12,16 @@ defmodule Random do
   @bpf 53
   @recip_bpf :math.pow(2, -@bpf)
   @maxwidth 1 <<< @bpf
+  @e 2.71828
 
   defexception ValueError, message: "ValueError", can_rety: false do
     def full_message(self), do: "ValueError: #{self.message}" 
   end
+  
+  @doc """
+  Return x % y
+  """
+  def mod(x, y), do: rem(rem(x, y) + y, y)
 
   @doc """
   Choose a random item from range(start, stop[, step]).
@@ -182,7 +188,121 @@ defmodule Random do
       vonmisesvariate_helper(r)
     end
   end
+  
+  @doc """
+  Gamma distribution.  Not the gamma function!
+  Conditions on the parameters are alpha > 0 and beta > 0.
 
-  def mod(x, y), do: rem(rem(x, y) + y, y)
+  The probability distribution function is:
+  
+    x ** (alpha - 1) * math.exp(-x / beta)
+    pdf(x) =  --------------------------------------
+    math.gamma(alpha) * beta ** alpha
+  """
+  def gammavariate(alpha, beta)
+      when alpha <= 0 and beta <= 0 do
+    throw ValueError[message: "gammavariate: alpha and beta must be > 0.0"]
+  end
 
-end
+  def gammavariate(alpha, beta)
+      when alpha > 1 do
+    ainv = :math.sqrt(2 * alpha- 1)
+    bbb = alpha - @log4
+    ccc = alpha + ainv
+    gammavariate_helper(alpha, beta, ainv, bbb, ccc)
+  end
+  
+  def gammavariate(alpha, beta)
+      when alpha == 1 do
+    u = :random.uniform
+    if u <= 1.0e-7, do: gammavariate(alpha, beta)
+    -:math.log(u) * beta
+  end
+  
+  def gammavariate(alpha, beta) do
+    u = :random.uniform
+    b = (@e + alpha) / @e
+    p = b * u
+    x = if p <= 1.0 do
+      :math.pow(p, 1 / alpha)
+    else
+      -:math.log((b - p) / alpha)
+    end
+    u1 = :random.uniform
+    unless (p > 1 and u1 <= :math.pow(x, alpha - 1)) or (u1 <= :math.exp(-x)) do
+      gammavariate(alpha, beta)
+    end
+    x * beta
+  end
+  
+  defp gammavariate_helper(alpha, beta, ainv, bbb, ccc) do
+    u1 = :random.uniform
+    if 1.0e-6 < u1 and u1 < 0.9999999 do
+      u2 = 1 - :random.uniform
+      v = :math.log(u1 / (1 - u1)) / ainv
+      x = alpha * :math.exp(v)
+      z = u1 * u1 * u2
+      r = bbb + ccc * v - x
+      if r + @sg_magicconst - 4.5 * z >= 0 or r >= :math.log(z) do
+        x * beta
+      else
+        gammavariate_helper(alpha, beta, ainv, bbb, ccc)
+      end
+    else
+      gammavariate_helper(alpha, beta, ainv, bbb, ccc)
+    end
+  end
+  
+  @doc """
+  Gaussian distribution.
+  
+    mu is the mean, and sigma is the standard deviation.  This is
+    slightly faster than the normalvariate() function.
+    
+    Returns {number, gauss_next}
+  """
+  def gauss(mu, sigma, gauss_next//nil) do
+    z = gauss_next
+    gauss_next = nil
+    if z == nil do
+      x2pi = :random.uniform * @twopi
+      g2rad = :math.sqrt(-2 * :math.log(1 - :random.uniform))
+      z = :math.cos(x2pi) * g2rad
+      gauss_next = :math.sin(x2pi) * g2rad
+    end
+    {mu + z * sigma, gauss_next}
+  end 
+
+  @doc """
+  Beta distribution.
+
+     Conditions on the parameters are alpha > 0 and beta > 0.
+     Returned values range between 0 and 1.
+   
+  """
+  def betavariate(alpha, beta) do
+    y = gammavariate(alpha, 1.0)
+    if y == 0, do: 0, else: y / (y + gammavariate(beta, 1))
+  end
+  
+  @doc """
+  Pareto distribution.
+  
+    alpha is the shape parameter.
+  """
+  def paretovariate(alpha) do
+    u = 1 - :random.uniform
+    1 / :math.pow(u, 1 / alpha)
+  end
+  
+  @doc """
+  Weibull distribution.
+
+    alpha is the scale parameter and beta is the shape parameter.
+  """
+  def weibullvariate(alpha, beta) do
+    u = 1 - :random.uniform
+    alpha * :math.pow(-:math.log(u), 1 / beta)
+  end
+  
+end  # module
