@@ -1,3 +1,6 @@
+# Ported from Python 3
+# See: http://hg.python.org/cpython/file/8c768bbacd92/Lib/random.py
+# 
 defmodule Random do
   use Bitwise
   
@@ -35,27 +38,27 @@ defmodule Random do
   end
 
   def randrange(start, _stop, _step)
-    when trunc(start) != start do
+      when trunc(start) != start do
     throw ValueError[message: "non-integer start for randrange(#{start}, #{_stop}, #{_step}"]
   end
 
   def randrange(_start, stop, _step)
-    when trunc(stop) != stop do
+      when trunc(stop) != stop do
     throw ValueError[message: "non-integer stop for randrange(#{_start}, #{stop}, #{_step}"]
   end
 
   def randrange(_start, _stop, step)
-    when trunc(step) != step do
+      when trunc(step) != step do
     throw ValueError[message: "non-integer step for randrange(#{_start}, #{_stop}, #{step}"]
   end
 
   def randrange(_start, _stop, step)
-    when step == 0 do
+      when step == 0 do
     throw ValueError[message: "zero step for randrange(#{_start}, #{_stop}, #{step}"]
   end
 
   def randrange(start, stop, step)
-    when step == 1 do
+      when step == 1 do
     width = stop - start
     if width > 0 do
       if width >= @maxwidth do
@@ -110,7 +113,7 @@ defmodule Random do
   Chooses k unique random elements from a population sequence.
   """
   def sample(pop, k)
-    when k >= 0 and is_list(pop) do
+      when k >= 0 and is_list(pop) do
     pop = list_to_tuple(pop)
     n = size(pop)
     sel = HashSet.new
