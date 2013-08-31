@@ -63,4 +63,9 @@ defmodule RandomTest do
     assert(Set.size(s) == length(ls))
   end
 
+  test "triangular l, h, m" do
+    r = Random.triangular
+    assert(r >= 0 and r < 1)
+  end
+
 end

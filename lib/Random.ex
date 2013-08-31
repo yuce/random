@@ -208,6 +208,27 @@ defmodule Random do
   def random, do: prandom
   def uniform(a, b), do: a + (b - a) * prandom
 
+  @doc """
+  Triangular distribution.
+
+  Return a random floating point number N such that low <= N <= high and with the specified mode between those bounds. The low and high bounds default to zero and one. The mode argument defaults to the midpoint between the bounds, giving a symmetric distribution.
+
+    http://en.wikipedia.org/wiki/Triangular_distribution
+  """
+  def triangular(low//0, high//1, mode//nil) do
+    u = prandom
+    c = if mode == nil, do: 0.5, else: (mode - low) / (high - low)
+    if u > c do
+      u = 1 - u
+      c = 1 - c
+      {low, high} = {high, low}
+    end
+    low + (high - low) * :math.pow(u * c, 0.5)
+  end
+
+  @oc """
+  Normal distribution. mu is the mean, and sigma is the standard deviation.
+  """
   def normalvariate(mu, sigma) do
     z = normalvariate_helper
     mu + z * sigma
@@ -222,9 +243,19 @@ defmodule Random do
     if zz <= -:math.log(u2), do: z, else: normalvariate_helper
   end
 
+  @doc """
+  Log normal distribution. If you take the natural logarithm of this distribution, you’ll get a normal distribution with mean mu and standard deviation sigma. mu can have any value, and sigma must be greater than zero.
+  """
   def lognormvariate(mu, sigma), do: :math.exp(normalvariate(mu, sigma))
+
+  @doc """
+  Exponential distribution. `lambda` is 1.0 divided by the desired mean. It should be nonzero. Returned values range from 0 to positive infinity if lambda is positive, and from negative infinity to 0 if lambda is negative.
+  """
   def expovariate(lambda), do: -:math.log(1.0 - prandom) / lambda
 
+  @doc """
+  mu is the mean angle, expressed in radians between 0 and 2*pi, and kappa is the concentration parameter, which must be greater than or equal to zero. If kappa is equal to zero, this distribution reduces to a uniform random angle over the range 0 to 2*pi.
+  """
   def vonmisesvariate(_mu, kappa)
     when kappa <= 1.0e-6, do: @twopi * prandom
 
@@ -263,8 +294,8 @@ defmodule Random do
 
   The probability distribution function is:
   
-    x ** (alpha - 1) * math.exp(-x / beta)
-    pdf(x) =  --------------------------------------
+    x ** (alpha - 1) * math.exp(-x / beta)<br>
+    pdf(x) =  --------------------------------------<br>
     math.gamma(alpha) * beta ** alpha
   """
   def gammavariate(alpha, beta)
@@ -325,7 +356,7 @@ defmodule Random do
   Gaussian distribution.
   
     mu is the mean, and sigma is the standard deviation.  This is
-    slightly faster than the normalvariate() function.
+    slightly faster than the `Random.normalvariate/2` function.
     
     Returns {number, gauss_next}
   """
