@@ -8,7 +8,9 @@ On the real line, there are functions to compute uniform, normal (Gaussian), log
 
 Almost all module functions depend on the basic function random(), which generates a random float uniformly in the semi-open range [0.0, 1.0).
 
-Examples:
+Documentation: http://yuce.tekol.net/elixir/random
+
+## Examples
 
     iex(1)> Random.randint(10, 20)
     14
