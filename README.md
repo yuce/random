@@ -6,7 +6,7 @@ For integers, there is uniform selection from a range. For sequences, there is u
 
 On the real line, there are functions to compute uniform, normal (Gaussian), lognormal, negative exponential, gamma, and beta distributions. For generating distributions of angles, the von Mises distribution is available.
 
-Almost all module functions depend on the basic function random(), which generates a random float uniformly in the semi-open range `[0.0, 1.0)`.
+Almost all module functions depend on a Erlang `:random.uniform` function wrapper, which generates a random float uniformly in the semi-open range `[0.0, 1.0)`.
 
 [Documentation](http://yuce.github.io/random/)
 
@@ -14,6 +14,7 @@ Almost all module functions depend on the basic function random(), which generat
 
     iex(1)> Random.randint(10, 20)
     14
-    iex(2)> Random.shuffle(1..6)
-    [5, 4, 1, 6, 2, 3]
+    iex(2)> Random.sample 0..10000, 4
+    [4436, 5015, 7231, 9459]
+
 
