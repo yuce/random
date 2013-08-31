@@ -1,11 +1,21 @@
 # Ported from Python 3
 # See: http://hg.python.org/cpython/file/8c768bbacd92/Lib/random.py
 # 
+# Translated by Guido van Rossum from C source provided by
+# Adrian Baddeley.  Adapted by Raymond Hettinger for use with
+# the Mersenne Twister and os.urandom() core generators.
+# Ported to Elixir by Yuce Tekol.
+
+
 defmodule Random do
   use Bitwise
   
   @moduledoc """
-  Random algorithms adapted from Python 3
+  This module contains pseudo-random number generators for various distributionsported from Python 3 `random` module The documentation below is adapted from that module as well.
+
+  For integers, there is uniform selection from a range. For sequences, there is uniform selection of a random element, a function to generate a random permutation of a list in-place, and a function for random sampling without replacement.
+
+  On the real line, there are functions to compute uniform, normal (Gaussian), lognormal, negative exponential, gamma, and beta distributions. For generating distributions of angles, the von Mises distribution is available.
   """
 
   @nv_magicconst 4 * :math.exp(-0.5) / :math.sqrt(2.0)
@@ -26,8 +36,25 @@ defmodule Random do
   """
   def mod(x, y), do: rem(rem(x, y) + y, y)
 
+  #@doc """
+  #Return a random number in range [0.0, 1.0)
+  #"""
+  defmacrop prandom do
+    quote do
+      r = :random.uniform
+      if r === 1.0, do: 0.0, else: r
+    end
+  end
+
+  defmacrop random_int(n) do
+    quote do
+      r = :random.uniform
+      if r === 1.0, do: 0, else: trunc(r * unquote(n))
+    end
+  end
+
   @doc """
-  Choose a random item from range(start, stop[, step]).
+  Returns a random integer from range(start, stop[, step]).
   """
   def randrange(stop) do
     randrange(0, stop, 1)
@@ -37,34 +64,27 @@ defmodule Random do
     randrange(start, stop, 1)
   end
 
-  def randrange(start, _stop, _step)
-      when trunc(start) != start do
-    throw ValueError[message: "non-integer start for randrange(#{start}, #{_stop}, #{_step}"]
+  def randrange(start, stop, step)
+      when trunc(start) != start or
+        trunc(stop) != stop or
+        trunc(step) != step do
+    throw ValueError[message: "non-integer argument for randrange(#{start}, #{stop}, #{step}"]
   end
 
-  def randrange(_start, stop, _step)
-      when trunc(stop) != stop do
-    throw ValueError[message: "non-integer stop for randrange(#{_start}, #{stop}, #{_step}"]
-  end
 
-  def randrange(_start, _stop, step)
-      when trunc(step) != step do
-    throw ValueError[message: "non-integer step for randrange(#{_start}, #{_stop}, #{step}"]
-  end
-
-  def randrange(_start, _stop, step)
-      when step == 0 do
-    throw ValueError[message: "zero step for randrange(#{_start}, #{_stop}, #{step}"]
-  end
+  #def randrange(start, stop, _step)
+  #    when stop <= start do
+  #  throw ValueError[message: "stop must be greater than start for randrange(#{_start}, #{_stop}, #{step}"]
+  #end
 
   def randrange(start, stop, step)
       when step == 1 do
     width = stop - start
     if width > 0 do
       if width >= @maxwidth do
-        trunc(start + randbelow(width))
+        start + randbelow(width)
       else
-        trunc(start + trunc(:random.uniform * width))
+        start + random_int(width)
       end
     else
       throw ValueError[message: "empty range for randrange(#{start}, #{stop}, #{step}"]
@@ -89,32 +109,82 @@ defmodule Random do
     if n >= @maxwidth do
       start + step * randbelow(n)
     else
-      start + step * trunc(:random.uniform * n)
+      start + step * random_int(n)
     end
   end
 
-  defp randbelow(n) do
-    trunc(:random.uniform * n)
-  end
+  defp randbelow(n), do: random_int(n)
 
   @doc """
-  Return random integer in range [a, b], including both end points.
+  Return a random integer N such that a <= N <= b. Alias for Random.randrange(a, b+1).
   """
   def randint(a, b), do: randrange(a, b + 1)
   
   @doc """
-  Choose a random element from a non-empty sequence.
+  Returns a random element from a non-empty sequence.
+
+  If `seq` is a list, converts it to a tuple before picking.
   """
-  def choice(seq) do
-    Enum.at(seq, trunc(:random.uniform * Enum.count(seq)))
+  def choice(a..b)
+      when b >= a do
+    n = b - a + 1
+    random_int(n) + a
+  end
+
+  def choice(seq)
+      when is_list(seq) do
+    tp = list_to_tuple(seq)
+    choice(tp)
+  end
+
+  def choice(seq)
+      when is_tuple(seq) do
+    elem(seq, random_int(size(seq)))
   end
   
   @doc """
-  Chooses k unique random elements from a population sequence.
+  Shuffle sequence `x`. This function is currently an alias for `Enum.shuffle/1`.
+
+  Note that for even rather small `size(x)`, the total number of permutations of x is larger than the period of most random number generators; this implies that most permutations of a long sequence can never be generated.
   """
+  def shuffle(x), do: Enum.shuffle(x)
+  
+  @doc """
+  Chooses k unique random elements from a population sequence or set.
+
+  Returns a new list containing elements from the population while
+  leaving the original population unchanged. The resulting list is
+  in selection order so that all sub-slices will also be valid random
+  samples.  This allows raffle winners (the sample) to be partitioned
+  into grand prize and second place winners (the subslices).
+
+  Members of the population need not be unique. If the
+  population contains repeats, then each occurrence is a possible
+  selection in the sample.
+
+  To choose a sample in a range of integers, use range as an argument.
+  This is especially fast and space efficient for sampling from a
+  large population: `Random.sample(0..10000000, 60)`
+  """
+  def sample(_pop, k)
+      when k <= 0 do
+    throw ValueError[message: "sample: k must be greater than 0"]
+  end
+
+  def sample(a..b, k)
+      when b >= a and k <= (b - a + 1) do
+    n = (b - a) + 1
+    sel = HashSet.new
+    Enum.map(sample_helper(n, k, sel, 0), &(a + &1))
+  end
+
   def sample(pop, k)
-      when k >= 0 and is_list(pop) do
-    pop = list_to_tuple(pop)
+      when is_list(pop) do
+    sample(list_to_tuple(pop), k)
+  end
+
+  def sample(pop, k)
+      when is_tuple(pop) do
     n = size(pop)
     sel = HashSet.new
     Enum.map sample_helper(n, k, sel, 0), &(elem(pop, &1))
@@ -122,7 +192,7 @@ defmodule Random do
     
   defp sample_helper(n, k, sel, sel_size) do
     if sel_size < k do
-      j = trunc(:random.uniform * n)
+      j = random_int(n)
       if Set.member?(sel, j) do
         sample_helper(n, k, sel, sel_size)
       else
@@ -135,13 +205,8 @@ defmodule Random do
     end
   end
 
-  @doc """
-  Shuffle sequence `x`
-  """
-  def shuffle(x), do: Enum.shuffle(x)
-  
-  def uniform(a, b), do: a + (b - a) * :random.uniform
-  def random, do: :random.uniform
+  def random, do: prandom
+  def uniform(a, b), do: a + (b - a) * prandom
 
   def normalvariate(mu, sigma) do
     z = normalvariate_helper
@@ -149,8 +214,8 @@ defmodule Random do
   end
   
   defp normalvariate_helper do
-    u1 = :random.uniform
-    u2 = 1.0 - :random.uniform
+    u1 = prandom
+    u2 = 1.0 - prandom
     z = @nv_magicconst * (u1 - 0.5) / u2
     zz = z * z / 4.0
 
@@ -158,10 +223,10 @@ defmodule Random do
   end
 
   def lognormvariate(mu, sigma), do: :math.exp(normalvariate(mu, sigma))
-  def expovariate(lambda), do: -:math.log(1.0 - :random.uniform) / lambda
+  def expovariate(lambda), do: -:math.log(1.0 - prandom) / lambda
 
   def vonmisesvariate(_mu, kappa)
-    when kappa <= 1.0e-6, do: @twopi * :random.uniform
+    when kappa <= 1.0e-6, do: @twopi * prandom
 
   def vonmisesvariate(mu, kappa) do
     s = 0.5 / kappa
@@ -169,7 +234,7 @@ defmodule Random do
     z = vonmisesvariate_helper(r)
     q = 1.0 / r
     f = (q + z) / (1.0 + q * z)
-    u3 = :random.uniform
+    u3 = prandom
 
     if u3 > 0.5 do
       mod((mu + :math.acos(f)), @twopi)
@@ -180,10 +245,10 @@ defmodule Random do
   end
 
   defp vonmisesvariate_helper(r) do
-    u1 = :random.uniform
+    u1 = prandom
     z = :math.cos(:math.pi * u1)
     d = z / (r + 2)
-    u2 = :random.uniform
+    u2 = prandom
 
     if (u2 < 1.0 - d * d) or (u2 <= (1.0 - d) * :math.exp(d)) do
       z
@@ -217,13 +282,13 @@ defmodule Random do
   
   def gammavariate(alpha, beta)
       when alpha == 1 do
-    u = :random.uniform
+    u = prandom
     if u <= 1.0e-7, do: gammavariate(alpha, beta)
     -:math.log(u) * beta
   end
   
   def gammavariate(alpha, beta) do
-    u = :random.uniform
+    u = prandom
     b = (@e + alpha) / @e
     p = b * u
     x = if p <= 1.0 do
@@ -231,7 +296,7 @@ defmodule Random do
     else
       -:math.log((b - p) / alpha)
     end
-    u1 = :random.uniform
+    u1 = prandom
     unless (p > 1 and u1 <= :math.pow(x, alpha - 1)) or (u1 <= :math.exp(-x)) do
       gammavariate(alpha, beta)
     end
@@ -239,9 +304,9 @@ defmodule Random do
   end
   
   defp gammavariate_helper(alpha, beta, ainv, bbb, ccc) do
-    u1 = :random.uniform
+    u1 = prandom
     if 1.0e-6 < u1 and u1 < 0.9999999 do
-      u2 = 1 - :random.uniform
+      u2 = 1 - prandom
       v = :math.log(u1 / (1 - u1)) / ainv
       x = alpha * :math.exp(v)
       z = u1 * u1 * u2
@@ -268,8 +333,8 @@ defmodule Random do
     z = gauss_next
     gauss_next = nil
     if z == nil do
-      x2pi = :random.uniform * @twopi
-      g2rad = :math.sqrt(-2 * :math.log(1 - :random.uniform))
+      x2pi = prandom * @twopi
+      g2rad = :math.sqrt(-2 * :math.log(1 - prandom))
       z = :math.cos(x2pi) * g2rad
       gauss_next = :math.sin(x2pi) * g2rad
     end
@@ -294,7 +359,7 @@ defmodule Random do
     alpha is the shape parameter.
   """
   def paretovariate(alpha) do
-    u = 1 - :random.uniform
+    u = 1 - prandom
     1 / :math.pow(u, 1 / alpha)
   end
   
@@ -304,7 +369,7 @@ defmodule Random do
     alpha is the scale parameter and beta is the shape parameter.
   """
   def weibullvariate(alpha, beta) do
-    u = 1 - :random.uniform
+    u = 1 - prandom
     alpha * :math.pow(-:math.log(u), 1 / beta)
   end
   
