@@ -13,9 +13,13 @@ defmodule Random do
   @moduledoc """
   This module contains pseudo-random number generators for various distributionsported from Python 3 `random` module The documentation below is adapted from that module as well.
 
-  For integers, there is uniform selection from a range. For sequences, there is uniform selection of a random element, a function to generate a random permutation of a list in-place, and a function for random sampling without replacement.
-
+  For integers, there is uniform selection from a range. For sequences, there is uniform selection of a random element, a function to generate a random permutation, and a function for random sampling without replacement.
+  
   On the real line, there are functions to compute uniform, normal (Gaussian), lognormal, negative exponential, gamma, and beta distributions. For generating distributions of angles, the von Mises distribution is available.
+
+  [Project homepage](https://bitbucket.org/yuce/random/)
+
+  [Original Python 3 documentation](http://docs.python.org/3/library/random.html)
   """
 
   @nv_magicconst 4 * :math.exp(-0.5) / :math.sqrt(2.0)
@@ -54,16 +58,22 @@ defmodule Random do
   end
 
   @doc """
-  Returns a random integer from range(start, stop[, step]).
+  Returns a random integer from range `[0, stop)`.
   """
   def randrange(stop) do
     randrange(0, stop, 1)
   end
 
+  @doc """
+  Returns a random integer from range `[start, stop)`.
+  """
   def randrange(start, stop) do
     randrange(start, stop, 1)
   end
 
+  @doc """
+  Returns a random integer from range `[start, stop)` with steps `step`.
+  """
   def randrange(start, stop, step)
       when trunc(start) != start or
         trunc(stop) != stop or
@@ -205,7 +215,16 @@ defmodule Random do
     end
   end
 
+  @doc """
+  Return the next random floating point number in the range [0.0, 1.0).
+  """
   def random, do: prandom
+
+  @doc """
+  Return a random floating point number N such that a <= N <= b for a <= b and b <= N <= a for b < a.
+
+  The end-point value b may or may not be included in the range depending on floating-point rounding in the equation `a + (b-a) * random()`.
+  """
   def uniform(a, b), do: a + (b - a) * prandom
 
   @doc """
@@ -226,7 +245,7 @@ defmodule Random do
     low + (high - low) * :math.pow(u * c, 0.5)
   end
 
-  @oc """
+  @doc """
   Normal distribution. mu is the mean, and sigma is the standard deviation.
   """
   def normalvariate(mu, sigma) do
@@ -294,9 +313,9 @@ defmodule Random do
 
   The probability distribution function is:
   
-    x ** (alpha - 1) * math.exp(-x / beta)<br>
-    pdf(x) =  --------------------------------------<br>
-    math.gamma(alpha) * beta ** alpha
+                x ** (alpha - 1) * exp(-x / beta)
+      pdf(x) =  ---------------------------------
+                gamma(alpha) * beta ** alpha
   """
   def gammavariate(alpha, beta)
       when alpha <= 0 and beta <= 0 do
@@ -355,10 +374,17 @@ defmodule Random do
   @doc """
   Gaussian distribution.
   
-    mu is the mean, and sigma is the standard deviation.  This is
-    slightly faster than the `Random.normalvariate/2` function.
-    
-    Returns {number, gauss_next}
+  mu is the mean, and sigma is the standard deviation.  This is
+  slightly faster than the `Random.normalvariate/2` function.
+  
+  Returns {number, gauss_next}
+
+  Example:
+
+      iex(1)> {n, gauss_next} = Random.gauss(1, 2)
+      {-2.0056082102271917, 0.5561885306380824}
+      iex(2)> {n, gauss_next} = Random.gauss(1, 2, gauss_next)
+      {2.112377061276165, nil}
   """
   def gauss(mu, sigma, gauss_next//nil) do
     z = gauss_next
