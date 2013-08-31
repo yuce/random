@@ -6,9 +6,9 @@ For integers, there is uniform selection from a range. For sequences, there is u
 
 On the real line, there are functions to compute uniform, normal (Gaussian), lognormal, negative exponential, gamma, and beta distributions. For generating distributions of angles, the von Mises distribution is available.
 
-Almost all module functions depend on the basic function random(), which generates a random float uniformly in the semi-open range [0.0, 1.0).
+Almost all module functions depend on the basic function random(), which generates a random float uniformly in the semi-open range `[0.0, 1.0)`.
 
-Documentation: http://yuce.tekol.net/elixir/random
+[Documentation](http://yuce.github.io/random/)
 
 ## Examples
 
