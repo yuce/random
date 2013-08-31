@@ -3,7 +3,7 @@ defmodule Random.Mixfile do
 
   def project do
     [ app: :random,
-      version: "0.0.1",
+      version: "0.0.2",
       elixir: "~> 0.10.2-dev",
       name: "Random",
       source_url: "https://bitbucket.org/yuce/random/",
