@@ -1,6 +1,6 @@
 # Random
 
-This module contains pseudo-random number generators for various distributionsp orted from Python 3 `random` module. The documentation below is adapted from that module as well.
+This module contains pseudo-random number generators for various distributions ported from Python 3 `random` module. The documentation below is adapted from that module as well.
 
 For integers, there is uniform selection from a range. For sequences, there is uniform selection of a random element, a function to generate a random permutation of a list in-place, and a function for random sampling without replacement.
 
