@@ -22,9 +22,9 @@ Almost all module functions depend on a Erlang `:random.uniform` function wrappe
     14
     iex(2)> Random.sample(0..10000, 4)
     [4436, 5015, 7231, 9459]
-    iex(2)> {n, gauss_next} = Random.gauss(1, 2)
+    iex(3)> {n, gauss_next} = Random.gauss(1, 2)
     {-2.0056082102271917, 0.5561885306380824}
-    iex(3)> {n, gauss_next} = Random.gauss(1, 2, gauss_next)
+    iex(4)> {n, gauss_next} = Random.gauss(1, 2, gauss_next)
     {2.112377061276165, nil}
 
 
