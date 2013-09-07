@@ -20,6 +20,17 @@ defmodule Random do
   [Project homepage](https://bitbucket.org/yuce/random/)
 
   [Original Python 3 documentation](http://docs.python.org/3/library/random.html)
+
+  Example:
+      
+      iex(1)> Random.seed(42)
+      :undefined
+      iex(2)> Random.randint(5, 142)
+      40
+      iex(3)> Random.randrange(5, 142, 2)
+      127
+      iex(4)> Random.choice(10..1000)
+      779
   """
 
   @nv_magicconst 4 * :math.exp(-0.5) / :math.sqrt(2.0)
@@ -56,6 +67,29 @@ defmodule Random do
       if r === 1.0, do: 0, else: trunc(r * unquote(n))
     end
   end
+
+  @doc """
+  Seed the random generator.
+
+  This function accepts both erlang (tuple of 3 integers)  and python (single integer) forms of seeding.
+
+  `Random.seed(n)` is equivalent to `Random.seed({0, n, 0})`.
+
+  Erlang form:
+
+      now = :erlang.now
+      Random.seed(now)
+
+  Python form:
+
+      Random.seed(5)
+  """
+  def seed({a, b, c})
+      when is_integer(a) and is_integer(b) and is_integer(c) do
+    :random.seed(a, b, c)
+  end
+
+  def seed(a) when is_integer(a), do: :random.seed(0, a, 0)
 
   @doc """
   Returns a random integer from range `[0, stop)`.
