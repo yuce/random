@@ -42,10 +42,15 @@ defmodule Random do
   @maxwidth 1 <<< @bpf
   @e 2.71828
 
-  defexception ValueError, message: "ValueError", can_rety: false do
-    def full_message(self), do: "ValueError: #{self.message}" 
+  defmodule ValueError do
+    defexception [:message]
+
+    def exception(value) do
+      msg = "ValueError: #{inspect value}"
+      %ValueError{message: msg}
+    end
   end
-  
+ 
   @doc """
   Return x % y
   """
@@ -177,13 +182,13 @@ defmodule Random do
 
   def choice(seq)
       when is_list(seq) do
-    tp = list_to_tuple(seq)
+    tp = :erlang.list_to_tuple(seq)
     choice(tp)
   end
 
   def choice(seq)
       when is_tuple(seq) do
-    elem(seq, random_int(size(seq)))
+    elem(seq, random_int(:erlang.size(seq)))
   end
   
   @doc """
@@ -224,12 +229,12 @@ defmodule Random do
 
   def sample(pop, k)
       when is_list(pop) do
-    sample(list_to_tuple(pop), k)
+    sample(:erlang.list_to_tuple(pop), k)
   end
 
   def sample(pop, k)
       when is_tuple(pop) do
-    n = size(pop)
+    n = :erlang.size(pop)
     sel = HashSet.new
     Enum.map sample_helper(n, k, sel, 0), &(elem(pop, &1))
   end
@@ -268,7 +273,7 @@ defmodule Random do
 
     http://en.wikipedia.org/wiki/Triangular_distribution
   """
-  def triangular(low//0, high//1, mode//nil) do
+  def triangular(low\\0, high\\1, mode\\nil) do
     u = prandom
     c = if mode == nil, do: 0.5, else: (mode - low) / (high - low)
     if u > c do
@@ -420,7 +425,7 @@ defmodule Random do
       iex(2)> {n, gauss_next} = Random.gauss(1, 2, gauss_next)
       {2.112377061276165, nil}
   """
-  def gauss(mu, sigma, gauss_next//nil) do
+  def gauss(mu, sigma, gauss_next\\nil) do
     z = gauss_next
     gauss_next = nil
     if z == nil do

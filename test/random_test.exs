@@ -1,10 +1,6 @@
 defmodule RandomTest do
   use ExUnit.Case
 
-  test "the truth" do
-    assert(true)
-  end
-
   test "mod == python %" do
     assert(Random.mod(5, 5) == 0)
     assert(Random.mod(5, 1) == 0)
@@ -39,7 +35,7 @@ defmodule RandomTest do
     c = Random.choice(ls)
     assert(Enum.find ls, &(c == &1))
 
-    c = Random.choice(list_to_tuple(ls))
+    c = Random.choice(:erlang.list_to_tuple(ls))
     assert(Enum.find ls, &(c == &1))
 
     seq = 10..50
@@ -49,17 +45,17 @@ defmodule RandomTest do
 
   test "sample p, k" do
     sample = Random.sample(0..1000000, 60)
-    s = HashSet.new(sample)
+    s = Enum.into(sample, HashSet.new)
     assert(Set.size(s) == 60)
 
     ls = Enum.map(1..10, &(&1 * 10))
 
     sample = Random.sample(ls, 2)
-    s = HashSet.new(sample)
+    s = Enum.into(sample, HashSet.new)
     assert(Set.size(s) == 2)
 
     sample = Random.sample(ls, length(ls))
-    s = HashSet.new(sample)
+    s = Enum.into(sample, HashSet.new)
     assert(Set.size(s) == length(ls))
   end
 
