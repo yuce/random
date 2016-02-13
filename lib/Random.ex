@@ -1,28 +1,29 @@
 # Ported from Python 3
 # See: http://hg.python.org/cpython/file/8c768bbacd92/Lib/random.py
-# 
+#
 # Translated by Guido van Rossum from C source provided by
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
 # the Mersenne Twister and os.urandom() core generators.
 # Ported to Elixir by Yuce Tekol.
-
+# Uniform random number generation code is provided by Kenji Rikitake.
+# https://github.com/jj1bdx/tinymt-erlang/blob/master/src/tinymt32.erl
 
 defmodule Random do
   use Bitwise
-  
+
   @moduledoc """
   This module contains pseudo-random number generators for various distributionsported from Python 3 `random` module The documentation below is adapted from that module as well.
 
   For integers, there is uniform selection from a range. For sequences, there is uniform selection of a random element, a function to generate a random permutation, and a function for random sampling without replacement.
-  
+
   On the real line, there are functions to compute uniform, normal (Gaussian), lognormal, negative exponential, gamma, and beta distributions. For generating distributions of angles, the von Mises distribution is available.
 
-  [Project homepage](https://bitbucket.org/yuce/random/)
+  [Project homepage](https://github.com/yuce/random/)
 
   [Original Python 3 documentation](http://docs.python.org/3/library/random.html)
 
   Example:
-      
+
       iex(1)> Random.seed(42)
       :undefined
       iex(2)> Random.randint(5, 142)
@@ -50,27 +51,14 @@ defmodule Random do
       %ValueError{message: msg}
     end
   end
- 
+
   @doc """
   Return x % y
   """
   def mod(x, y), do: rem(rem(x, y) + y, y)
 
-  #@doc """
-  #Return a random number in range [0.0, 1.0)
-  #"""
-  defmacrop prandom do
-    quote do
-      r = :random.uniform
-      if r === 1.0, do: 0.0, else: r
-    end
-  end
-
-  defmacrop random_int(n) do
-    quote do
-      r = :random.uniform
-      if r === 1.0, do: 0, else: trunc(r * unquote(n))
-    end
+  def random_int(n) when n >= 1 do
+    trunc(random * n)
   end
 
   @doc """
@@ -82,19 +70,18 @@ defmodule Random do
 
   Erlang form:
 
-      now = :erlang.now
+      now = :erlang.timestamp
       Random.seed(now)
 
   Python form:
 
       Random.seed(5)
   """
-  def seed({a, b, c})
-      when is_integer(a) and is_integer(b) and is_integer(c) do
-    :random.seed(a, b, c)
+  def seed({a, b, c}) do
+    :tinymt32.seed(a, b, c)
   end
 
-  def seed(a) when is_integer(a), do: :random.seed(0, a, 0)
+  def seed(a), do: :tinymt.seed(0, a, 0)
 
   @doc """
   Returns a random integer from range `[0, stop)`.
@@ -119,12 +106,6 @@ defmodule Random do
         trunc(step) != step do
     throw ValueError[message: "non-integer argument for randrange(#{start}, #{stop}, #{step}"]
   end
-
-
-  #def randrange(start, stop, _step)
-  #    when stop <= start do
-  #  throw ValueError[message: "stop must be greater than start for randrange(#{_start}, #{_stop}, #{step}"]
-  #end
 
   def randrange(start, stop, step)
       when step == 1 do
@@ -238,7 +219,7 @@ defmodule Random do
     sel = HashSet.new
     Enum.map sample_helper(n, k, sel, 0), &(elem(pop, &1))
   end
-    
+
   defp sample_helper(n, k, sel, sel_size) do
     if sel_size < k do
       j = random_int(n)
@@ -254,17 +235,40 @@ defmodule Random do
     end
   end
 
+  defp seed0 do
+    {:intstate32, 297425621, 2108342699, 4290625991,
+                  2232209075, 2406486510, 4235788063,
+                  932445695}
+  end
+
+  defp temper_float(r) do
+    :tinymt32.temper(r) * (1.0 / 4294967296.0)
+  end
+
+  defp uniform_s(r0) do
+    r1 = :tinymt32.next_state(r0)
+    {temper_float(r1), r1}
+  end
+
   @doc """
   Return the next random floating point number in the range [0.0, 1.0).
   """
-  def random, do: prandom
+  def random do
+    r = case :erlang.get(:tinymt32_seed) do
+      :undefined -> seed0
+      other -> other
+    end
+    {v, r2} = uniform_s(r)
+    :erlang.put(:tinymt32_seed, r2)
+    v
+  end
 
   @doc """
   Return a random floating point number N such that a <= N <= b for a <= b and b <= N <= a for b < a.
 
   The end-point value b may or may not be included in the range depending on floating-point rounding in the equation `a + (b-a) * random()`.
   """
-  def uniform(a, b), do: a + (b - a) * prandom
+  def uniform(a, b), do: a + (b - a) * random
 
   @doc """
   Triangular distribution.
@@ -274,7 +278,7 @@ defmodule Random do
     http://en.wikipedia.org/wiki/Triangular_distribution
   """
   def triangular(low\\0, high\\1, mode\\nil) do
-    u = prandom
+    u = random
     c = if mode == nil, do: 0.5, else: (mode - low) / (high - low)
     if u > c do
       u = 1 - u
@@ -291,10 +295,10 @@ defmodule Random do
     z = normalvariate_helper
     mu + z * sigma
   end
-  
+
   defp normalvariate_helper do
-    u1 = prandom
-    u2 = 1.0 - prandom
+    u1 = random
+    u2 = 1.0 - random
     z = @nv_magicconst * (u1 - 0.5) / u2
     zz = z * z / 4.0
 
@@ -309,13 +313,13 @@ defmodule Random do
   @doc """
   Exponential distribution. `lambda` is 1.0 divided by the desired mean. It should be nonzero. Returned values range from 0 to positive infinity if lambda is positive, and from negative infinity to 0 if lambda is negative.
   """
-  def expovariate(lambda), do: -:math.log(1.0 - prandom) / lambda
+  def expovariate(lambda), do: -:math.log(1.0 - random) / lambda
 
   @doc """
   mu is the mean angle, expressed in radians between 0 and 2*pi, and kappa is the concentration parameter, which must be greater than or equal to zero. If kappa is equal to zero, this distribution reduces to a uniform random angle over the range 0 to 2*pi.
   """
   def vonmisesvariate(_mu, kappa)
-    when kappa <= 1.0e-6, do: @twopi * prandom
+    when kappa <= 1.0e-6, do: @twopi * random
 
   def vonmisesvariate(mu, kappa) do
     s = 0.5 / kappa
@@ -323,7 +327,7 @@ defmodule Random do
     z = vonmisesvariate_helper(r)
     q = 1.0 / r
     f = (q + z) / (1.0 + q * z)
-    u3 = prandom
+    u3 = random
 
     if u3 > 0.5 do
       mod((mu + :math.acos(f)), @twopi)
@@ -334,10 +338,10 @@ defmodule Random do
   end
 
   defp vonmisesvariate_helper(r) do
-    u1 = prandom
+    u1 = random
     z = :math.cos(:math.pi * u1)
     d = z / (r + 2)
-    u2 = prandom
+    u2 = random
 
     if (u2 < 1.0 - d * d) or (u2 <= (1.0 - d) * :math.exp(d)) do
       z
@@ -345,13 +349,13 @@ defmodule Random do
       vonmisesvariate_helper(r)
     end
   end
-  
+
   @doc """
   Gamma distribution.  Not the gamma function!
   Conditions on the parameters are alpha > 0 and beta > 0.
 
   The probability distribution function is:
-  
+
                 x ** (alpha - 1) * exp(-x / beta)
       pdf(x) =  ---------------------------------
                 gamma(alpha) * beta ** alpha
@@ -368,16 +372,16 @@ defmodule Random do
     ccc = alpha + ainv
     gammavariate_helper(alpha, beta, ainv, bbb, ccc)
   end
-  
+
   def gammavariate(alpha, beta)
       when alpha == 1 do
-    u = prandom
+    u = random
     if u <= 1.0e-7, do: gammavariate(alpha, beta)
     -:math.log(u) * beta
   end
-  
+
   def gammavariate(alpha, beta) do
-    u = prandom
+    u = random
     b = (@e + alpha) / @e
     p = b * u
     x = if p <= 1.0 do
@@ -385,17 +389,17 @@ defmodule Random do
     else
       -:math.log((b - p) / alpha)
     end
-    u1 = prandom
+    u1 = random
     unless (p > 1 and u1 <= :math.pow(x, alpha - 1)) or (u1 <= :math.exp(-x)) do
       gammavariate(alpha, beta)
     end
     x * beta
   end
-  
+
   defp gammavariate_helper(alpha, beta, ainv, bbb, ccc) do
-    u1 = prandom
+    u1 = random
     if 1.0e-6 < u1 and u1 < 0.9999999 do
-      u2 = 1 - prandom
+      u2 = 1 - random
       v = :math.log(u1 / (1 - u1)) / ainv
       x = alpha * :math.exp(v)
       z = u1 * u1 * u2
@@ -409,13 +413,13 @@ defmodule Random do
       gammavariate_helper(alpha, beta, ainv, bbb, ccc)
     end
   end
-  
+
   @doc """
   Gaussian distribution.
-  
+
   mu is the mean, and sigma is the standard deviation.  This is
   slightly faster than the `Random.normalvariate/2` function.
-  
+
   Returns {number, gauss_next}
 
   Example:
@@ -429,44 +433,44 @@ defmodule Random do
     z = gauss_next
     gauss_next = nil
     if z == nil do
-      x2pi = prandom * @twopi
-      g2rad = :math.sqrt(-2 * :math.log(1 - prandom))
+      x2pi = random * @twopi
+      g2rad = :math.sqrt(-2 * :math.log(1 - random))
       z = :math.cos(x2pi) * g2rad
       gauss_next = :math.sin(x2pi) * g2rad
     end
     {mu + z * sigma, gauss_next}
-  end 
+  end
 
   @doc """
   Beta distribution.
 
      Conditions on the parameters are alpha > 0 and beta > 0.
      Returned values range between 0 and 1.
-   
+
   """
   def betavariate(alpha, beta) do
     y = gammavariate(alpha, 1.0)
     if y == 0, do: 0, else: y / (y + gammavariate(beta, 1))
   end
-  
+
   @doc """
   Pareto distribution.
-  
+
     alpha is the shape parameter.
   """
   def paretovariate(alpha) do
-    u = 1 - prandom
+    u = 1 - random
     1 / :math.pow(u, 1 / alpha)
   end
-  
+
   @doc """
   Weibull distribution.
 
     alpha is the scale parameter and beta is the shape parameter.
   """
   def weibullvariate(alpha, beta) do
-    u = 1 - prandom
+    u = 1 - random
     alpha * :math.pow(-:math.log(u), 1 / beta)
   end
-  
+
 end  # module

@@ -1,20 +1,40 @@
 # Elixir Random module
 
-This module contains pseudo-random number generators for various distributions ported from Python 3 `random` module for [Elixir](http://elixir-lang.org). The documentation below is adapted from that module as well.
+This module contains pseudo-random number generators for various distributions
+ported from Python 3 `random` module for [Elixir](http://elixir-lang.org).
+The documentation below is adapted from that module as well.
 
-For integers, there is uniform selection from a range. For sequences, there is uniform selection of a random element, a function to generate a random permutation of a list in-place, and a function for random sampling without replacement.
+> For integers, there is uniform selection from a range. For sequences, there is uniform
+selection of a random element, a function to generate a random permutation of a list in-place,
+and a function for random sampling without replacement.
 
-On the real line, there are functions to compute uniform, normal (Gaussian), lognormal, negative exponential, gamma, and beta distributions. For generating distributions of angles, the von Mises distribution is available.
+> On the real line, there are functions to compute uniform, normal (Gaussian), lognormal,
+negative exponential, gamma, and beta distributions. For generating distributions of angles,
+the von Mises distribution is available.
 
-Almost all module functions depend on a Erlang `:random.uniform` function wrapper, which generates a random float uniformly in the semi-open range `[0.0, 1.0)`.
+## Documentation
 
-[Project Homepage on BitBucket](https://bitbucket.org/yuce/random/)
+* [Module documentation](http://yuce.github.io/random/)
 
-[Project Homepage on GitHub](https://github.com/yuce/random/)
+* [Python 3 random module documentation](http://docs.python.org/3/library/random.html)
 
-[Documentation](http://yuce.github.io/random/)
 
-[Original Python 3 Documentation](http://docs.python.org/3/library/random.html)
+## Build
+
+The only dependency is [TinyMT Erlang](https://github.com/jj1bdx/tinymt-erlang), which
+is available on [hex.pm](https://hex.pm/packages/tinymt)
+
+    $ mix get.deps
+    $ mix
+
+## Test
+
+    $ mix test
+
+## Usage
+
+**Random** is available on [hex.pm](https://hex.pm/packages/random).
+You neeed to include `{:random, "> 0.2.1"}` as a dependency in your project.
 
 ## Examples
 
@@ -27,4 +47,7 @@ Almost all module functions depend on a Erlang `:random.uniform` function wrappe
     iex(4)> {n, gauss_next} = Random.gauss(1, 2, gauss_next)
     {2.112377061276165, nil}
 
+## Thanks
 
+* [Kenji Rikitake](https://github.com/jj1bdx) pointed out a range error in the module and provided code which enables using his [TinyMT Erlang](https://github.com/jj1bdx/tinymt-erlang)
+library to produce floats in `[0.0, 1.0)` range.
