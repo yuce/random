@@ -1,7 +1,7 @@
 Expm.Package.new(
   name: "random",
   description: "Elixir port of Python 3 random module.",
-  version: File.read!("VERSION") |> String.strip,
+  version: "0.2.3",
   licenses: [[name: "MIT"]],
   keywords: ["random", "math", "elixir"],
   maintainers: [
