@@ -48,15 +48,6 @@ defmodule Random do
   @maxwidth 1 <<< @bpf
   @e 2.71828
 
-  defmodule ValueError do
-    defexception [:message]
-
-    def exception(value) do
-      msg = "ValueError: #{inspect value}"
-      %ValueError{message: msg}
-    end
-  end
-
   @doc """
   Return x % y
   """
@@ -109,7 +100,7 @@ defmodule Random do
       when trunc(start) != start or
         trunc(stop) != stop or
         trunc(step) != step do
-    throw ValueError[message: "non-integer argument for randrange(#{start}, #{stop}, #{step}"]
+    raise ArgumentError, message: "non-integer argument for randrange(#{start}, #{stop}, #{step}"
   end
 
   def randrange(start, stop, step)
@@ -122,7 +113,7 @@ defmodule Random do
         start + random_int(width)
       end
     else
-      throw ValueError[message: "empty range for randrange(#{start}, #{stop}, #{step}"]
+      raise ArgumentError, message: "empty range for randrange(#{start}, #{stop}, #{step}"
     end
   end
 
@@ -134,11 +125,11 @@ defmodule Random do
       step < 0 ->
         trunc((width + step + 1) / step)
       true ->
-        throw ValueError[message: "zero step for randrange(#{start}, #{stop}, #{step}"]
+        raise ArgumentError, message: "zero step for randrange(#{start}, #{stop}, #{step}"
     end
 
     if n <= 0 do
-      throw ValueError[message: "empty range for randrange(#{start}, #{stop}, #{step})"]
+      raise ArgumentError, message: "empty range for randrange(#{start}, #{stop}, #{step})"
     end
 
     if n >= @maxwidth do
@@ -214,7 +205,7 @@ defmodule Random do
   """
   def sample(_pop, k)
       when k <= 0 do
-    throw ValueError[message: "sample: k must be greater than 0"]
+    raise ArgumentError, message: "sample: k must be greater than 0"
   end
 
   def sample(a..b, k)
@@ -378,7 +369,7 @@ defmodule Random do
   """
   def gammavariate(alpha, beta)
       when alpha <= 0 and beta <= 0 do
-    throw ValueError[message: "gammavariate: alpha and beta must be > 0.0"]
+    raise ArgumentError, message: "gammavariate: alpha and beta must be > 0.0"
   end
 
   def gammavariate(alpha, beta)
