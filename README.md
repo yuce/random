@@ -34,7 +34,7 @@ is available on [hex.pm](https://hex.pm/packages/tinymt)
 ## Usage
 
 **Random** is available on [hex.pm](https://hex.pm/packages/random).
-You neeed to include `{:random, "> 0.2.1"}` as a dependency in your project.
+You neeed to include `{:random, "> 0.2.3"}` as a dependency in your project.
 
 ## Examples
 
@@ -51,3 +51,5 @@ You neeed to include `{:random, "> 0.2.1"}` as a dependency in your project.
 
 * [Kenji Rikitake](https://github.com/jj1bdx) pointed out a range error in the module and provided code which enables using his [TinyMT Erlang](https://github.com/jj1bdx/tinymt-erlang)
 library to produce floats in `[0.0, 1.0)` range.
+
+* [p2k](https://github.com/p2k) updated the project to be compatible with Elixir 1.2.
