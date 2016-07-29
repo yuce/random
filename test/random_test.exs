@@ -72,4 +72,8 @@ defmodule RandomTest do
     assert(Set.size(s) == length(ls))
   end
 
+  test "seed" do
+    Random.seed(0)
+  end
+
 end

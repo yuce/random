@@ -77,7 +77,7 @@ defmodule Random do
     :tinymt32.seed(a, b, c)
   end
 
-  def seed(a), do: :tinymt.seed(0, a, 0)
+  def seed(a), do: :tinymt32.seed(0, a, 0)
 
   @doc """
   Returns a random integer from range `[0, stop)`.
@@ -145,7 +145,7 @@ defmodule Random do
   Return a random integer N such that a <= N <= b. Alias for Random.randrange(a, b+1).
   """
   def randint(a, b), do: randrange(a, b + 1)
-  
+
   @doc """
   Returns a random element from a non-empty sequence.
 
@@ -167,7 +167,7 @@ defmodule Random do
       when is_tuple(seq) do
     elem(seq, random_int(:erlang.size(seq)))
   end
-  
+
   @doc """
   Shuffle sequence `x`. This function is currently an alias for `Enum.shuffle/1`.
 
@@ -185,7 +185,7 @@ defmodule Random do
   end
 
   defp unwrap([], t), do: t
-  
+
   @doc """
   Chooses k unique random elements from a population sequence or set.
 
@@ -287,10 +287,10 @@ defmodule Random do
   def triangular(low\\0, high\\1, mode\\nil) do
     u = random
     c = if mode == nil, do: 0.5, else: (mode - low) / (high - low)
-    if u > c do
-      u = 1 - u
-      c = 1 - c
-      {low, high} = {high, low}
+    {u, c, low, high} = if u > c do
+      {1 - u, 1 - c, high, low}
+    else
+      {u, c, low, high}
     end
     low + (high - low) * :math.pow(u * c, 0.5)
   end
@@ -438,12 +438,12 @@ defmodule Random do
   """
   def gauss(mu, sigma, gauss_next\\nil) do
     z = gauss_next
-    gauss_next = nil
-    if z == nil do
+    {z, gauss_next} = if z == nil do
       x2pi = random * @twopi
       g2rad = :math.sqrt(-2 * :math.log(1 - random))
-      z = :math.cos(x2pi) * g2rad
-      gauss_next = :math.sin(x2pi) * g2rad
+      {:math.cos(x2pi) * g2rad, :math.sin(x2pi) * g2rad}
+    else
+      {gauss_next, nil}
     end
     {mu + z * sigma, gauss_next}
   end

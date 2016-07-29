@@ -1,2 +1,1 @@
-%{"ex_doc": {:git, "git://github.com/elixir-lang/ex_doc.git", "219601d2b709d39d9d3e5441d960abc4161add73", []},
-  "tinymt": {:hex, :tinymt, "0.3.1"}}
+%{"tinymt": {:hex, :tinymt, "0.3.1", "1f835f3e8840b13daf9d11aa5be8deefcb0765d2bb82d5f52015b63d48eb016f", [:mix, :make], []}}
