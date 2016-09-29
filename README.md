@@ -34,7 +34,7 @@ is available on [hex.pm](https://hex.pm/packages/tinymt)
 ## Usage
 
 **Random** is available on [hex.pm](https://hex.pm/packages/random).
-You neeed to include `{:random, "> 0.2.3"}` as a dependency in your project.
+You neeed to include `{:random, "~> 0.2.3"}` as a dependency in your project.
 
 ## Examples
 
