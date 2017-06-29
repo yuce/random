@@ -54,7 +54,7 @@ defmodule Random do
   def mod(x, y), do: rem(rem(x, y) + y, y)
 
   def random_int(n) when n >= 1 do
-    trunc(random * n)
+    trunc(random() * n)
   end
 
   @doc """
@@ -175,7 +175,7 @@ defmodule Random do
   """
   def shuffle(enumerable) do
     randomized = Enum.reduce(enumerable, [], fn x, acc ->
-      [{random, x}|acc]
+      [{random(), x}|acc]
     end)
     unwrap(:lists.keysort(1, randomized), [])
   end
@@ -262,7 +262,7 @@ defmodule Random do
   """
   def random do
     r = case :erlang.get(:tinymt32_seed) do
-      :undefined -> seed0
+      :undefined -> seed0()
       other -> other
     end
     {v, r2} = uniform_s(r)
@@ -275,7 +275,7 @@ defmodule Random do
 
   The end-point value b may or may not be included in the range depending on floating-point rounding in the equation `a + (b-a) * random()`.
   """
-  def uniform(a, b), do: a + (b - a) * random
+  def uniform(a, b), do: a + (b - a) * random()
 
   @doc """
   Triangular distribution.
@@ -285,7 +285,7 @@ defmodule Random do
     http://en.wikipedia.org/wiki/Triangular_distribution
   """
   def triangular(low\\0, high\\1, mode\\nil) do
-    u = random
+    u = random()
     c = if mode == nil, do: 0.5, else: (mode - low) / (high - low)
     {u, c, low, high} = if u > c do
       {1 - u, 1 - c, high, low}
@@ -299,17 +299,17 @@ defmodule Random do
   Normal distribution. mu is the mean, and sigma is the standard deviation.
   """
   def normalvariate(mu, sigma) do
-    z = normalvariate_helper
+    z = normalvariate_helper()
     mu + z * sigma
   end
 
   defp normalvariate_helper do
-    u1 = random
-    u2 = 1.0 - random
+    u1 = random()
+    u2 = 1.0 - random()
     z = @nv_magicconst * (u1 - 0.5) / u2
     zz = z * z / 4.0
 
-    if zz <= -:math.log(u2), do: z, else: normalvariate_helper
+    if zz <= -:math.log(u2), do: z, else: normalvariate_helper()
   end
 
   @doc """
@@ -320,13 +320,13 @@ defmodule Random do
   @doc """
   Exponential distribution. `lambda` is 1.0 divided by the desired mean. It should be nonzero. Returned values range from 0 to positive infinity if lambda is positive, and from negative infinity to 0 if lambda is negative.
   """
-  def expovariate(lambda), do: -:math.log(1.0 - random) / lambda
+  def expovariate(lambda), do: -:math.log(1.0 - random()) / lambda
 
   @doc """
   mu is the mean angle, expressed in radians between 0 and 2*pi, and kappa is the concentration parameter, which must be greater than or equal to zero. If kappa is equal to zero, this distribution reduces to a uniform random angle over the range 0 to 2*pi.
   """
   def vonmisesvariate(_mu, kappa)
-    when kappa <= 1.0e-6, do: @twopi * random
+    when kappa <= 1.0e-6, do: @twopi * random()
 
   def vonmisesvariate(mu, kappa) do
     s = 0.5 / kappa
@@ -334,7 +334,7 @@ defmodule Random do
     z = vonmisesvariate_helper(r)
     q = 1.0 / r
     f = (q + z) / (1.0 + q * z)
-    u3 = random
+    u3 = random()
 
     if u3 > 0.5 do
       mod((mu + :math.acos(f)), @twopi)
@@ -345,10 +345,10 @@ defmodule Random do
   end
 
   defp vonmisesvariate_helper(r) do
-    u1 = random
+    u1 = random()
     z = :math.cos(:math.pi * u1)
     d = z / (r + 2)
-    u2 = random
+    u2 = random()
 
     if (u2 < 1.0 - d * d) or (u2 <= (1.0 - d) * :math.exp(d)) do
       z
@@ -382,13 +382,13 @@ defmodule Random do
 
   def gammavariate(alpha, beta)
       when alpha == 1 do
-    u = random
+    u = random()
     if u <= 1.0e-7, do: gammavariate(alpha, beta)
     -:math.log(u) * beta
   end
 
   def gammavariate(alpha, beta) do
-    u = random
+    u = random()
     b = (@e + alpha) / @e
     p = b * u
     x = if p <= 1.0 do
@@ -396,7 +396,7 @@ defmodule Random do
     else
       -:math.log((b - p) / alpha)
     end
-    u1 = random
+    u1 = random()
     unless (p > 1 and u1 <= :math.pow(x, alpha - 1)) or (u1 <= :math.exp(-x)) do
       gammavariate(alpha, beta)
     end
@@ -404,9 +404,9 @@ defmodule Random do
   end
 
   defp gammavariate_helper(alpha, beta, ainv, bbb, ccc) do
-    u1 = random
+    u1 = random()
     if 1.0e-6 < u1 and u1 < 0.9999999 do
-      u2 = 1 - random
+      u2 = 1 - random()
       v = :math.log(u1 / (1 - u1)) / ainv
       x = alpha * :math.exp(v)
       z = u1 * u1 * u2
@@ -439,8 +439,8 @@ defmodule Random do
   def gauss(mu, sigma, gauss_next\\nil) do
     z = gauss_next
     {z, gauss_next} = if z == nil do
-      x2pi = random * @twopi
-      g2rad = :math.sqrt(-2 * :math.log(1 - random))
+      x2pi = random() * @twopi
+      g2rad = :math.sqrt(-2 * :math.log(1 - random()))
       {:math.cos(x2pi) * g2rad, :math.sin(x2pi) * g2rad}
     else
       {gauss_next, nil}
@@ -466,7 +466,7 @@ defmodule Random do
     alpha is the shape parameter.
   """
   def paretovariate(alpha) do
-    u = 1 - random
+    u = 1 - random()
     1 / :math.pow(u, 1 / alpha)
   end
 
@@ -476,7 +476,7 @@ defmodule Random do
     alpha is the scale parameter and beta is the shape parameter.
   """
   def weibullvariate(alpha, beta) do
-    u = 1 - random
+    u = 1 - random()
     alpha * :math.pow(-:math.log(u), 1 / beta)
   end
 
