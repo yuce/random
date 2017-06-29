@@ -44,7 +44,6 @@ defmodule Random do
   @log4 :math.log(4)
   @sg_magicconst 1 + :math.log(4.5)
   @bpf 53
-  @recip_bpf :math.pow(2, -@bpf)
   @maxwidth 1 <<< @bpf
   @e 2.71828
 
