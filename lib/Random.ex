@@ -211,7 +211,7 @@ defmodule Random do
   def sample(a..b, k)
       when b >= a and k <= (b - a + 1) do
     n = (b - a) + 1
-    sel = HashSet.new
+    sel = MapSet.new
     Enum.map(sample_helper(n, k, sel, 0), &(a + &1))
   end
 
@@ -223,22 +223,22 @@ defmodule Random do
   def sample(pop, k)
       when is_tuple(pop) do
     n = :erlang.size(pop)
-    sel = HashSet.new
+    sel = MapSet.new
     Enum.map sample_helper(n, k, sel, 0), &(elem(pop, &1))
   end
 
   defp sample_helper(n, k, sel, sel_size) do
     if sel_size < k do
       j = random_int(n)
-      if Set.member?(sel, j) do
+      if MapSet.member?(sel, j) do
         sample_helper(n, k, sel, sel_size)
       else
-        sel = Set.put(sel, j)
+        sel = MapSet.put(sel, j)
         sel_size = sel_size + 1
         sample_helper(n, k, sel, sel_size)
       end
     else
-      Set.to_list(sel)
+      MapSet.to_list(sel)
     end
   end
 
