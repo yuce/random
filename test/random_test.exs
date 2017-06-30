@@ -45,18 +45,18 @@ defmodule RandomTest do
 
   test "sample p, k" do
     sample = Random.sample(0..1000000, 60)
-    s = Enum.into(sample, HashSet.new)
-    assert(Set.size(s) == 60)
+    s = Enum.into(sample, MapSet.new)
+    assert(MapSet.size(s) == 60)
 
     ls = Enum.map(1..10, &(&1 * 10))
 
     sample = Random.sample(ls, 2)
-    s = Enum.into(sample, HashSet.new)
-    assert(Set.size(s) == 2)
+    s = Enum.into(sample, MapSet.new)
+    assert(MapSet.size(s) == 2)
 
     sample = Random.sample(ls, length(ls))
-    s = Enum.into(sample, HashSet.new)
-    assert(Set.size(s) == length(ls))
+    s = Enum.into(sample, MapSet.new)
+    assert(MapSet.size(s) == length(ls))
   end
 
   test "triangular l, h, m" do
@@ -68,8 +68,8 @@ defmodule RandomTest do
     ls = :lists.seq(1, 20)
     shuffled_ls = Random.shuffle ls
     assert(ls != shuffled_ls)
-    s = Enum.into(ls, HashSet.new)
-    assert(Set.size(s) == length(ls))
+    s = Enum.into(ls, MapSet.new)
+    assert(MapSet.size(s) == length(ls))
   end
 
   test "seed" do
