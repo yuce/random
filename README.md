@@ -53,3 +53,5 @@ You neeed to include `{:random, "~> 0.2.3"}` as a dependency in your project.
 library to produce floats in `[0.0, 1.0)` range.
 
 * [p2k](https://github.com/p2k) updated the project to be compatible with Elixir 1.2.
+
+* [sashaegorov](https://github.com/sashaegorov) updated the project to be compatible with Elixir 1.4.
